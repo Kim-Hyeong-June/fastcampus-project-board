@@ -3,6 +3,7 @@ package com.fastcampus.projectboard.repository;
 
 import com.fastcampus.projectboard.config.JpaConfig;
 import com.fastcampus.projectboard.domain.Article;
+import com.fastcampus.projectboard.domain.UserAccount;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ class JpaRepositoryTest {
     private final ArticleCommentRepository articleCommentRepository;
 
     public JpaRepositoryTest(@Autowired ArticleRepository articleRepository, @Autowired ArticleCommentRepository articleCommentRepository) {
+
         this.articleRepository = articleRepository;
         this.articleCommentRepository = articleCommentRepository;
     }
@@ -32,6 +34,7 @@ class JpaRepositoryTest {
     void given_when_then() {
         List<Article> articles =
                 articleRepository.findAll();
+
         assertThat(articles).isNotNull().hasSize(123);
     }
 
