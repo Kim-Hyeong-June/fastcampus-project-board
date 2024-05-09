@@ -64,7 +64,7 @@ class JpaRepositoryTest {
         Article savedArticle = articleRepository.saveAndFlush(article);
         Assertions.assertThat(savedArticle).hasFieldOrPropertyWithValue("hashtag", updatedHashtag);
     }
-    
+
     @Test
     public void givenTestData(){
         Article article = articleRepository.findById(1L).orElseThrow();
