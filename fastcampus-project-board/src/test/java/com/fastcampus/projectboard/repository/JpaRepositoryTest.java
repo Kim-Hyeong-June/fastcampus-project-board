@@ -22,11 +22,12 @@ import static org.assertj.core.api.Assertions.*;
 class JpaRepositoryTest {
     private final ArticleRepository articleRepository;
     private final ArticleCommentRepository articleCommentRepository;
+    private final UserAccountRepository userAccountRepository;
 
-    public JpaRepositoryTest(@Autowired ArticleRepository articleRepository, @Autowired ArticleCommentRepository articleCommentRepository) {
-
+    public JpaRepositoryTest(@Autowired ArticleRepository articleRepository, @Autowired ArticleCommentRepository articleCommentRepository, @Autowired UserAccountRepository userAccountRepository) {
         this.articleRepository = articleRepository;
         this.articleCommentRepository = articleCommentRepository;
+        this.userAccountRepository = userAccountRepository;
     }
 
     @Test
@@ -40,10 +41,16 @@ class JpaRepositoryTest {
 
     @Test
     @DisplayName("insert Test")
-    void givenTestData_when_inserting() {
+    void givenTestData_when_inserting_thenWorksFine() {
         long previousCount = articleRepository.count();
-        Article savedArticle = articleRepository.save(Article.of("new Article", "new content", "#spring"));
+
+        UserAccount userAccount = userAccountRepository.save(UserAccount.of("uno", "pw", null, null, null));
+
+        Article article = Article.of(userAccount , "new article", "new content", "#spring");
+
+        articleRepository.save(article);
         Assertions.assertThat(articleRepository.count()).isEqualTo(previousCount + 1);
+
     }
 
     @Test
@@ -57,19 +64,7 @@ class JpaRepositoryTest {
         Article savedArticle = articleRepository.saveAndFlush(article);
         Assertions.assertThat(savedArticle).hasFieldOrPropertyWithValue("hashtag", updatedHashtag);
     }
-
-    @Test
-    @DisplayName("updating Test")
-    void givenTestData_whenUpdating2() {
-
-        Article article = articleRepository.findById(1L).orElseThrow();
-        String updatedHashtag = "#springboot";
-        article.setHashtag(updatedHashtag);
-
-        Article savedArticle = articleRepository.saveAndFlush(article);
-        Assertions.assertThat(savedArticle).hasFieldOrPropertyWithValue("hashtag", updatedHashtag);
-    }
-
+    
     @Test
     public void givenTestData(){
         Article article = articleRepository.findById(1L).orElseThrow();
