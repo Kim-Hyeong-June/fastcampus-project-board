@@ -57,11 +57,11 @@ class ArticleServiceTest {
         String searchKeyword = "title";
 
         Pageable pageable = Pageable.ofSize(20);
-        given(articleRepository.findByTitle(searchKeyword, pageable)).willReturn(Page.empty());
+        given(articleRepository.findByTitleContaining(searchKeyword, pageable)).willReturn(Page.empty());
         Page<ArticleDto> articles = sut.searchArticles(searchType, searchKeyword, pageable);
 
         Assertions.assertThat(articles).isEmpty();
-        BDDMockito.then(articleRepository).should().findByTitle(searchKeyword, pageable);
+        BDDMockito.then(articleRepository).should().findByTitleContaining(searchKeyword, pageable);
     }
 
     @DisplayName("게시글을 조회하면, 게시글을 반환한다.")
@@ -84,7 +84,7 @@ class ArticleServiceTest {
     @Test
     void givenNonexistentArticleId_whenSearchingArticle_thenThrowsException() {
         Long articleId = 0L;
-        given(articleRepository.findById(1L)).willReturn(Optional.empty());
+        given(articleRepository.findById(articleId)).willReturn(Optional.empty());
         Throwable t = catchThrowable(() -> sut.getArticle(articleId));
 
         Assertions.assertThat(t)
@@ -120,6 +120,7 @@ class ArticleServiceTest {
 
         BDDMockito.then(articleRepository).should().getReferenceById(dto.id());
     }
+
 
     @DisplayName("없는 게시글의 수정 정보를 입력하면, 경고 로그를 찍고 아무 것도 하지 않는다.")
     @Test
