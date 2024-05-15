@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * DTO for {@link Article}
  */
-public record ArticleWithCommentResponse(
+public record ArticleWithCommentsResponse(
         Long id,
         String title,
         String content,
@@ -20,20 +20,20 @@ public record ArticleWithCommentResponse(
         LocalDateTime createdAt,
         String email ,
         String nickname,
-        Set<ArticleCommentResponse> articleCommentResponses
+        Set<ArticleCommentsResponse> articleCommentResponses
 ) implements Serializable {
-    public static ArticleWithCommentResponse of(Long id, String title, String content, String hashtag, LocalDateTime createdAt, String email, String nickname, Set<ArticleCommentResponse> articleCommentResponses) {
-        return new ArticleWithCommentResponse(id, title, content, hashtag, createdAt, email, nickname, articleCommentResponses);
+    public static ArticleWithCommentsResponse of(Long id, String title, String content, String hashtag, LocalDateTime createdAt, String email, String nickname, Set<ArticleCommentsResponse> articleCommentResponses) {
+        return new ArticleWithCommentsResponse(id, title, content, hashtag, createdAt, email, nickname, articleCommentResponses);
     }
 
-    public static ArticleWithCommentResponse from(ArticleWithCommentsDto dto) {
+    public static ArticleWithCommentsResponse from(ArticleWithCommentsDto dto) {
         String nickname = dto.userAccountDto().nickname();
         if (nickname == null || nickname.isBlank()) {
             nickname = dto.userAccountDto().userId();
         }
-        return new ArticleWithCommentResponse(dto.id()  , dto.title() , dto.content() , dto.hashtag() , dto.createdAt() ,
+        return new ArticleWithCommentsResponse(dto.id()  , dto.title() , dto.content() , dto.hashtag() , dto.createdAt() ,
                 dto.userAccountDto().email(), nickname,
-                dto.articleCommentsDto().stream().map(ArticleCommentResponse::from)
+                dto.articleCommentsDto().stream().map(ArticleCommentsResponse::from)
                         .collect(Collectors.toCollection(LinkedHashSet::new))
                 );
     }
