@@ -132,9 +132,23 @@ class ArticleServiceTest {
 
     }
 
+    @DisplayName("게시글 수르 조회하면, 게시글 수를 반환한다.")
+    @Test
+    void givenNothing_whenCountingArticles_thenReturnsArticleCount() {
+        long expected = 0L;
+        BDDMockito.given(articleRepository.count()).willReturn(expected);
+        long actual = sut.getArticleCount();
+        Assertions.assertThat(actual).isEqualTo(expected);
+        BDDMockito.then(articleRepository).should().count();
+
+
+    }
+
+
     @DisplayName("게시글의 ID를 입력하면, 게시글을 삭제한다")
     @Test
     void givenArticleId_whenDeletingArticle_thenDeletesArticle() {
+
         Long articleId = 1L;
 
         willDoNothing().given(articleRepository).deleteById(articleId);
