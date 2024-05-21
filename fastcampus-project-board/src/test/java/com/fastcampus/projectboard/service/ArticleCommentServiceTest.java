@@ -73,7 +73,7 @@ class ArticleCommentServiceTest {
         sut.saveArticleComment(dto);
 
         then(articleRepository).should().getReferenceById(dto.articleId());
-        then(articleRepository).shouldHaveNoInteractions();
+        then(articleCommentRepository).shouldHaveNoInteractions();
     }
 
     @DisplayName("댓글 정보를 입력하면, 댓글을 수정한다.")
@@ -85,11 +85,12 @@ class ArticleCommentServiceTest {
         ArticleCommentDto dto = createArticleCommentDto(updatedContent);
         given(articleCommentRepository.getReferenceById(dto.id())).willReturn(articleComment);
 
+
         sut.updateArticleComment(dto);
         Assertions.assertThat(articleComment.getContent())
                 .isNotEqualTo(oldContent)
                 .isEqualTo(updatedContent);
-        then(articleRepository).should().getReferenceById(dto.id());
+        then(articleCommentRepository).should().getReferenceById(dto.id());
 
     }
 
@@ -100,7 +101,7 @@ class ArticleCommentServiceTest {
         given(articleCommentRepository.getReferenceById(dto.id())).willThrow(EntityNotFoundException.class);
 
         sut.updateArticleComment(dto);
-        then(articleRepository).should().getReferenceById(dto.id());
+        then(articleCommentRepository).should().getReferenceById(dto.id());
     }
 
     @DisplayName("댓글 ID를 입력하면, 댓글을 삭제한다.")
@@ -161,5 +162,4 @@ class ArticleCommentServiceTest {
                 null
         );
     }
-
 }
