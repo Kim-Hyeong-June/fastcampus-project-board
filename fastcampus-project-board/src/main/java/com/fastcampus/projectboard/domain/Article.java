@@ -32,6 +32,7 @@ public class Article extends AuditingFields{
 
     @Setter
     @ManyToOne(optional = false)
+    @JoinColumn(name = "userId")
     private UserAccount userAccount;
 
     @Setter @Column(nullable = false) private String title; // 제목;
@@ -46,7 +47,7 @@ public class Article extends AuditingFields{
     protected Article() {
     }
 
-    public Article(UserAccount userAccount, String title, String content, String hashtag) {
+    private Article(UserAccount userAccount, String title, String content, String hashtag) {
         this.userAccount = userAccount;
         this.title = title;
         this.content = content;
