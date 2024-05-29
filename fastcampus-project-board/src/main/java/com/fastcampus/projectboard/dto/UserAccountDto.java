@@ -2,7 +2,6 @@ package com.fastcampus.projectboard.dto;
 
 import com.fastcampus.projectboard.domain.UserAccount;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
