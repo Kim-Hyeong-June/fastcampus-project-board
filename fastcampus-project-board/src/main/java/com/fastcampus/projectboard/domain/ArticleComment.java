@@ -31,6 +31,7 @@ public class ArticleComment extends AuditingFields{
     private Article article;
 
     @Setter @ManyToOne(optional = false)
+    @JoinColumn(name ="userId")
     private UserAccount userAccount;
 
     @Setter @Column(nullable = false , length = 500) private String content; //본문
@@ -38,7 +39,7 @@ public class ArticleComment extends AuditingFields{
     protected ArticleComment() {
     }
 
-    public ArticleComment(Article article, UserAccount userAccount, String content) {
+    private ArticleComment(Article article, UserAccount userAccount, String content) {
         this.article = article;
         this.userAccount = userAccount;
         this.content = content;
