@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -144,15 +145,17 @@ class ArticleServiceTest {
 
         BDDMockito.then(articleRepository).should().save(any(Article.class));
         BDDMockito.then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
-
     }
 
+
+    //@WithMockUser
     @DisplayName("게시글의 수정 정보를 입력하면, 게시글을 수정한다.")
     @Test
     void givenModifiedArticleInfo_whenUpdatingArticle_thenUpdatesArticle() {
         Article article = createArticle();
         ArticleDto dto = createArticleDto("새 타이틀", "새 내용", "#springboot");
         given(articleRepository.getReferenceById(dto.id())).willReturn(article);
+        given(userAccountRepository.getReferenceById(dto.userAccountDto().userId())).willReturn(dto.userAccountDto().toEntity());
 
         sut.updateArticle(dto.id() , dto);
         Assertions.assertThat(article)
@@ -191,10 +194,12 @@ class ArticleServiceTest {
 
         Long articleId = 1L;
 
-        willDoNothing().given(articleRepository).deleteById(articleId);
+        String userId = "uno";
 
-        sut.deleteArticle(articleId);
-        BDDMockito.then(articleRepository).should().deleteById(1L);
+        willDoNothing().given(articleRepository).deleteByIdAndUserAccount_UserId(articleId , userId);
+
+        sut.deleteArticle(articleId , userId);
+        BDDMockito.then(articleRepository).should().deleteByIdAndUserAccount_UserId(articleId, userId);
 
     }
     @DisplayName("게시글을 해시태그 검색하면, 게시글 페이지를 반환한다.")

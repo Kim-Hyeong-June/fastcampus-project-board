@@ -1,6 +1,7 @@
 package com.fastcampus.projectboard.controller;
 
 import com.fastcampus.projectboard.config.SecurityConfig;
+import com.fastcampus.projectboard.config.TestSecurityConfig;
 import com.fastcampus.projectboard.domain.constant.FormStatus;
 import com.fastcampus.projectboard.domain.type.SearchType;
 import com.fastcampus.projectboard.dto.ArticleDto;
@@ -25,6 +26,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.security.test.context.support.TestExecutionEvent;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MockMvcBuilder;
 import org.springframework.test.web.servlet.ResultMatcher;
@@ -44,7 +48,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("View 컨트롤러 - 게시글")
-@Import({SecurityConfig.class, FormDataEncoder.class})
+@Import({TestSecurityConfig.class, FormDataEncoder.class})
 @WebMvcTest(ArticleController.class)
 class ArticleControllerTest {
 
@@ -128,6 +132,7 @@ class ArticleControllerTest {
 
 
     //@Disabled("구현중")
+    @WithMockUser
     @DisplayName("[view][get] 게시글 상세 페이지 - 정상 호출")
     @Test
     public void givenNothing_whenRequestingArticleView_thenReturnsArticleView() throws Exception {
@@ -148,6 +153,7 @@ class ArticleControllerTest {
         BDDMockito.then(articleService).should().getArticleCount();
 
     }
+
 
 
     private ArticleWithCommentsDto createArticleWithCommentsDTO() {
@@ -224,6 +230,8 @@ class ArticleControllerTest {
         BDDMockito.then(paginationService).should().getPaginationBarNumbers(anyInt(), anyInt());
 
     }
+
+    @WithMockUser
     @DisplayName("[view][GET] 새 게시글 작성 페이지")
     @Test
     void givenNothing_whenRequesting_thenReturnsNewArticlePage() throws Exception {
@@ -234,6 +242,19 @@ class ArticleControllerTest {
                 .andExpect(model().attribute("formStatus", FormStatus.CREATE));
     }
 
+    @DisplayName("[view][GET] 게시글 페이지 - 인증 없을 땐 로그인 페이지로 이동")
+    @Test
+    void givenNothing_whenRequestingArticlePage_thenRedirectsToLoginPage() throws Exception {
+        long articleId = 1L;
+        mvc.perform(get("/articles/" + articleId))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+        then(articleService).shouldHaveNoInteractions();
+
+    }
+
+    @WithUserDetails(value = "unoTest" , userDetailsServiceBeanName = "userDetailsService" , setupBefore = TestExecutionEvent.TEST_EXECUTION)
+    //@WithMockUser
     @DisplayName("[view][POST] 새 게시글 등록 - 정상 호출")
     @Test
     void givenNewArticleInfo_whenRequesting_thenSavesNewArticle() throws Exception {
@@ -253,11 +274,16 @@ class ArticleControllerTest {
         System.out.println("articleRequest = " + formDataEncoder.encode(articleRequest));
     }
 
+    @WithUserDetails(value = "unoTest" , setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("[view][POST] 게시글 삭제 - 정상 호출")
     @Test
     void givenArticleIdToDelete_whenRequesting_thenDeletesArticle() throws Exception {
         long articleId = 1L;
-        willDoNothing().given(articleService).deleteArticle(articleId);
+        String userId = "unoTest";
+
+
+        willDoNothing().given(articleService).deleteArticle(articleId,userId);
+
 
         mvc.perform(post("/articles/" + articleId + "/delete")
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -266,7 +292,7 @@ class ArticleControllerTest {
                 .andExpect(view().name("redirect:/articles"))
                 .andExpect(redirectedUrl("/articles"));
 
-        BDDMockito.then(articleService).should().deleteArticle(articleId);
+        BDDMockito.then(articleService).should().deleteArticle(articleId,userId);
 
     }
 
@@ -282,5 +308,4 @@ class ArticleControllerTest {
                 .content(formDataEncoder.encode(articleRequest))
                 .with(csrf()));
     }
-
 }

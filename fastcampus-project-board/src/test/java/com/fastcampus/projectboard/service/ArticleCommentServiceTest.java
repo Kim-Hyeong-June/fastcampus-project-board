@@ -49,8 +49,6 @@ class ArticleCommentServiceTest {
                 .first().hasFieldOrPropertyWithValue("content", expected.getContent());
 
         BDDMockito.then(articleCommentRepository).should().findByArticle_Id(articleId);
-
-
     }
 
     @DisplayName("댓글 정보를 입력하면, 댓글을 저장한다.")
@@ -70,11 +68,15 @@ class ArticleCommentServiceTest {
     @Test
     void givenArticleCommentId_whenDeletingArticleComment_thenDeletesArticleComment() {
         Long articleCommentId = 1L;
-        willDoNothing().given(articleCommentRepository).deleteById(articleCommentId);
+        String userId = "uno";
 
-        sut.deleteArticleComment(articleCommentId);
+
+        willDoNothing().given(articleCommentRepository).deleteByIdAndUserAccount_UserId(articleCommentId,userId);
+
+        sut.deleteArticleComment(articleCommentId, userId);
+
         BDDMockito.then(articleCommentRepository).should()
-                .deleteById(articleCommentId);
+                .deleteByIdAndUserAccount_UserId(articleCommentId,userId);
     }
 
     private ArticleCommentDto createArticleCommentDto(String content) {
