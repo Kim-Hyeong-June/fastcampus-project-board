@@ -28,7 +28,7 @@ class JpaRepositoryTest {
     private final ArticleCommentRepository articleCommentRepository;
     private final UserAccountRepository userAccountRepository;
 
-    public JpaRepositoryTest(@Autowired ArticleRepository articleRepository, @Autowired ArticleCommentRepository articleCommentRepository, @Autowired UserAccountRepository userAccountRepository) {
+    JpaRepositoryTest(@Autowired ArticleRepository articleRepository, @Autowired ArticleCommentRepository articleCommentRepository, @Autowired UserAccountRepository userAccountRepository) {
         this.articleRepository = articleRepository;
         this.articleCommentRepository = articleCommentRepository;
         this.userAccountRepository = userAccountRepository;
@@ -70,7 +70,7 @@ class JpaRepositoryTest {
     }
 
     @Test
-    public void givenTestData(){
+    void givenTestData(){
         Article article = articleRepository.findById(1L).orElseThrow();
         long previousArticleCount = articleRepository.count();
 
@@ -84,9 +84,9 @@ class JpaRepositoryTest {
 
     @EnableJpaAuditing
     @TestConfiguration
-    public static class TestJpaConfig{
+    static class TestJpaConfig{
         @Bean
-        public AuditorAware<String> auditorAware(){
+        AuditorAware<String> auditorAware(){
             return () -> Optional.of("Uno");
         }
     }
