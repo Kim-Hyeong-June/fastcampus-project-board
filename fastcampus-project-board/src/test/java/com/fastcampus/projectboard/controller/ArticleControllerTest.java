@@ -61,7 +61,7 @@ class ArticleControllerTest {
     @MockBean
     private PaginationService paginationService;
 
-    public ArticleControllerTest(@Autowired  MockMvc mvc, @Autowired FormDataEncoder formDataEncoder) {
+    ArticleControllerTest(@Autowired  MockMvc mvc, @Autowired FormDataEncoder formDataEncoder) {
         this.mvc = mvc;
         this.formDataEncoder = formDataEncoder;
     }
@@ -69,7 +69,7 @@ class ArticleControllerTest {
     //@Disabled("구현중")
     @DisplayName("[view][get] 게시글 리스트 (게시판) 페이지 - 정상 호출")
     @Test
-    public void givenNothing_whenRequestingArticlesView_thenReturnsArticlesView() throws Exception {
+    void givenNothing_whenRequestingArticlesView_thenReturnsArticlesView() throws Exception {
         BDDMockito.given(articleService.searchArticles(eq(null), eq(null), any(Pageable.class)))
                 .willReturn(Page.empty());
         BDDMockito.given(paginationService.getPaginationBarNumbers(anyInt() , anyInt())).willReturn(List.of(0,1,2,3,4));
@@ -88,7 +88,7 @@ class ArticleControllerTest {
 
     @DisplayName("[view][GET] 게시글 리스트 (게시판) 페이지 - 검색어와 함께 호출")
     @Test
-    public void givenSearchKeyword_whenSearchingArticlesView_thenReturnsArticlesView() throws Exception {
+    void givenSearchKeyword_whenSearchingArticlesView_thenReturnsArticlesView() throws Exception {
         SearchType searchType = SearchType.TITLE;
         String searchValue = "title";
         BDDMockito.given(articleService.searchArticles(eq(searchType), eq(searchValue), any(Pageable.class))).willReturn(Page.empty());
@@ -135,7 +135,7 @@ class ArticleControllerTest {
     @WithMockUser
     @DisplayName("[view][get] 게시글 상세 페이지 - 정상 호출")
     @Test
-    public void givenNothing_whenRequestingArticleView_thenReturnsArticleView() throws Exception {
+    void givenNothing_whenRequestingArticleView_thenReturnsArticleView() throws Exception {
         Long articleId = 1L;
         long totalCount = 1L;
 
@@ -184,7 +184,7 @@ class ArticleControllerTest {
 
     @DisplayName("[view][GET] 게시글 해시태그 검색 페이지 - 정상 호출")
     @Test
-    public void givenNothing_whenRequestingArticleSearchHashtagView_thenReturnsArticleSearchHashtagView() throws Exception {
+    void givenNothing_whenRequestingArticleSearchHashtagView_thenReturnsArticleSearchHashtagView() throws Exception {
         List<String> hashtags = List.of("#java", "#spring", "#boot");
         BDDMockito.given(articleService.searchArticlesViaHashtag(eq(null), any(Pageable.class))).willReturn(Page.empty());
         BDDMockito.given(articleService.getHashTags()).willReturn(hashtags);
@@ -207,7 +207,7 @@ class ArticleControllerTest {
 
     @DisplayName("[view][GET] 게시글 해시태그 검색 페이지 - 정상 호출, 해시태그 입력")
     @Test
-    public void givenHashtag_whenRequestingArticleSearchHashtagView_thenReturnsArticleSearchHashtagView() throws Exception {
+    void givenHashtag_whenRequestingArticleSearchHashtagView_thenReturnsArticleSearchHashtagView() throws Exception {
         String hashtag = "#java";
         List<String> hashtags = List.of("#java", "#spring", "#boot");
 
