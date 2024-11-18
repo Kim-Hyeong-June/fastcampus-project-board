@@ -1,18 +1,16 @@
 package com.fastcampus.projectboard.controller;
 
-import com.fastcampus.projectboard.config.SecurityConfig;
 import com.fastcampus.projectboard.config.TestSecurityConfig;
 import com.fastcampus.projectboard.domain.constant.FormStatus;
 import com.fastcampus.projectboard.domain.type.SearchType;
 import com.fastcampus.projectboard.dto.ArticleDto;
 import com.fastcampus.projectboard.dto.ArticleWithCommentsDto;
+import com.fastcampus.projectboard.dto.HashtagDto;
 import com.fastcampus.projectboard.dto.UserAccountDto;
 import com.fastcampus.projectboard.dto.request.ArticleRequest;
 import com.fastcampus.projectboard.service.ArticleService;
 import com.fastcampus.projectboard.service.PaginationService;
 import com.fastcampus.projectboard.util.FormDataEncoder;
-import org.hibernate.annotations.DialectOverride;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
@@ -25,22 +23,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
-import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MockMvcBuilder;
-import org.springframework.test.web.servlet.ResultMatcher;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -80,7 +74,9 @@ class ArticleControllerTest {
                 .andExpect(view().name("articles/index"))
                 .andExpect(model().attributeExists("articles"))
                 .andExpect(model().attributeExists("paginationBarNumbers"))
-                .andExpect(model().attributeExists("searchTypes"));
+                .andExpect(model().attributeExists("searchTypes"))
+                .andExpect(model().attribute("searchTypeHashtag", SearchType.HASHTAG));
+
 
         BDDMockito.then(articleService).should().searchArticles(eq(null), eq(null), any(Pageable.class));
         BDDMockito.then(paginationService).should().getPaginationBarNumbers(anyInt(), anyInt());
@@ -139,7 +135,7 @@ class ArticleControllerTest {
         Long articleId = 1L;
         long totalCount = 1L;
 
-        BDDMockito.given(articleService.getArticleWithComments(articleId)).willReturn(createArticleWithCommentsDTO());
+        BDDMockito.given(articleService.getArticleWithComments(articleId)).willReturn(createArticleWithCommentsDto());
         BDDMockito.given(articleService.getArticleCount()).willReturn(totalCount);
 
         mvc.perform(get("/articles/" + articleId))
@@ -153,34 +149,6 @@ class ArticleControllerTest {
         BDDMockito.then(articleService).should().getArticleCount();
 
     }
-
-
-
-    private ArticleWithCommentsDto createArticleWithCommentsDTO() {
-        return ArticleWithCommentsDto.of(1L ,
-                createUserAccountDto() ,
-                Set.of() ,
-                "title" ,
-                "content" ,
-                "#java" ,
-                LocalDateTime.now(),
-                "uno",
-                LocalDateTime.now(),
-                "uno");
-    }
-
-    private UserAccountDto createUserAccountDto(){
-        return UserAccountDto.of("uno",
-                "pw",
-                "uno@mail.com",
-                "Uno",
-                "memo",
-                LocalDateTime.now(),
-                "uno",
-                LocalDateTime.now(),
-                "uno");
-    }
-
 
     @DisplayName("[view][GET] 게시글 해시태그 검색 페이지 - 정상 호출")
     @Test
@@ -254,11 +222,11 @@ class ArticleControllerTest {
     }
 
     @WithUserDetails(value = "unoTest" , userDetailsServiceBeanName = "userDetailsService" , setupBefore = TestExecutionEvent.TEST_EXECUTION)
-    //@WithMockUser
     @DisplayName("[view][POST] 새 게시글 등록 - 정상 호출")
     @Test
     void givenNewArticleInfo_whenRequesting_thenSavesNewArticle() throws Exception {
-        ArticleRequest articleRequest = ArticleRequest.of("new title", "new content", "#java");
+        ArticleRequest articleRequest = ArticleRequest.of("new title", "new content");
+
         willDoNothing().given(articleService).saveArticle(any(ArticleDto.class));
 
         mvc.perform(post("/articles/form")
@@ -296,16 +264,59 @@ class ArticleControllerTest {
 
     }
 
+
+    @WithUserDetails(value = "unoTest", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("[view][POST] 게시글 수정 - 정상 호출")
     @Test
     void givenUpdatedArticleInfo_whenRequesting_thenUpdatesNewArticle() throws Exception {
         long articleId = 1L;
-        ArticleRequest articleRequest = ArticleRequest.of("new title", "title", "#new");
+        ArticleRequest articleRequest = ArticleRequest.of("new title", "new content");
+
         willDoNothing().given(articleService).updateArticle(eq(articleId), any(ArticleDto.class));
 
         mvc.perform(post("/articles/" + articleId + "/form")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .content(formDataEncoder.encode(articleRequest))
-                .with(csrf()));
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .content(formDataEncoder.encode(articleRequest))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(view().name("redirect:/articles/" + articleId))
+                .andExpect(redirectedUrl("/articles/" + articleId));
+
+        BDDMockito.then(articleService).should().updateArticle(eq(articleId), any(ArticleDto.class));
+
+
+    }
+
+
+
+
+    private ArticleDto createArticleDto(){
+        return ArticleDto.of(
+                createUserAccountDto(),
+                "title", "content",
+                Set.of(HashtagDto.of("java"))
+        );
+    }
+
+    private ArticleWithCommentsDto createArticleWithCommentsDto(){
+        return ArticleWithCommentsDto.of(1L,
+                createUserAccountDto(),
+                Set.of(),
+                "title",
+                "content",
+                Set.of(HashtagDto.of("java")),
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno");
+    }
+
+    private UserAccountDto createUserAccountDto(){
+        return UserAccountDto.of
+                ("uno", "pw",
+                        "uno@mail.com", "Uno",
+                        "memo", LocalDateTime.now(),
+                        "uno", LocalDateTime.now(),
+                        "uno");
     }
 }
