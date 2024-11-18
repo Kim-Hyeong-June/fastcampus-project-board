@@ -2,9 +2,12 @@ package com.fastcampus.projectboard.dto.response;
 
 import com.fastcampus.projectboard.domain.Article;
 import com.fastcampus.projectboard.dto.ArticleDto;
+import com.fastcampus.projectboard.dto.HashtagDto;
 import com.fastcampus.projectboard.dto.UserAccountDto;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DTO for {@link Article}
@@ -13,13 +16,13 @@ public record ArticleResponse(
         Long id,
         String title,
         String content,
-        String hashtag,
+        Set<String> hashtags,
         LocalDateTime createdAt,
         String email ,
         String nickname
 ){
-    public static ArticleResponse of(Long id, String title, String content, String hashtag, LocalDateTime createdAt, String email, String nickname) {
-        return new ArticleResponse(id, title, content, hashtag, createdAt, email, nickname);
+    public static ArticleResponse of(Long id, String title, String content, Set<String> hashtags, LocalDateTime createdAt, String email, String nickname) {
+        return new ArticleResponse(id, title, content, hashtags, createdAt, email, nickname);
     }
 
     public static ArticleResponse from(ArticleDto dto) {
@@ -28,8 +31,9 @@ public record ArticleResponse(
             nickname = dto.userAccountDto().userId();
         }
         return new ArticleResponse(dto.id(), dto.title(),
-                dto.content(), dto.hashtag(), dto.createdAt(),
-                dto.userAccountDto().email(), nickname);
-
+                dto.content(), dto.hashtagDtos().stream()
+                .map(HashtagDto::hashtagName)
+                .collect(Collectors.toUnmodifiableSet()),
+                dto.createdAt() , dto.userAccountDto().email(),nickname);
     }
 }
