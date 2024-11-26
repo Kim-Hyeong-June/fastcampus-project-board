@@ -43,7 +43,7 @@ public class ArticleController {
         map.addAttribute("articles", articles);
         map.addAttribute("paginationBarNumbers", barNumbers);
         map.addAttribute("searchTypes", SearchType.values());
-        
+        map.addAttribute("searchTypeHashtag", SearchType.HASHTAG);
         return "articles/index";
     }
 
@@ -54,7 +54,7 @@ public class ArticleController {
         map.addAttribute("article", article); // TODO : 구현 할때 실제 테이터를 넣어야한다.
         map.addAttribute("articleComments", article.articleCommentResponses());
         map.addAttribute("totalCount", articleService.getArticleCount());
-
+        map.addAttribute("searchTypeHashtag", SearchType.HASHTAG);
         return "articles/detail";
     }
 
