@@ -14,7 +14,6 @@ import com.fastcampus.projectboard.repository.UserAccountRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.hibernate.boot.model.internal.EmbeddableBinder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,9 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.ReflectionUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -38,11 +35,8 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.BDDAssertions.as;
-import static org.assertj.core.api.BDDAssertions.then;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.times;
 
 @DisplayName("비지니스 로직 - 게시글")
@@ -72,7 +66,7 @@ class ArticleServiceTest {
 
         Page<ArticleDto> articles = sut.searchArticles(null, null, pageable);
         Assertions.assertThat(articles).isEmpty();
-        BDDMockito.then(articleRepository).should().findAll(pageable);
+        then(articleRepository).should().findAll(pageable);
     }
 
     @DisplayName("검색어 없이 게시글을 해시태그 검색하면, 빈 페이지를 반환한다.")
@@ -83,8 +77,8 @@ class ArticleServiceTest {
         Page<ArticleDto> articles = sut.searchArticlesViaHashtag(null, pageable);
         Assertions.assertThat(articles).isEqualTo(Page.empty(pageable));
 
-        BDDMockito.then(hashtagRepository).shouldHaveNoInteractions();
-        BDDMockito.then(articleRepository).shouldHaveNoInteractions();
+        then(hashtagRepository).shouldHaveNoInteractions();
+        then(articleRepository).shouldHaveNoInteractions();
 
     }
 
@@ -99,7 +93,7 @@ class ArticleServiceTest {
 
         Assertions.assertThat(articles).isEqualTo(Page.empty(pageable));
 
-        BDDMockito.then(articleRepository).should().findByHashtagNames(List.of(hashtagName), pageable);
+        then(articleRepository).should().findByHashtagNames(List.of(hashtagName), pageable);
 
 
     }
@@ -117,7 +111,7 @@ class ArticleServiceTest {
         Page<ArticleDto> articles = sut.searchArticles(searchType, searchKeyword, pageable);
 
         Assertions.assertThat(articles).isEmpty();
-        BDDMockito.then(articleRepository).should().findByTitleContaining(searchKeyword, pageable);
+        then(articleRepository).should().findByTitleContaining(searchKeyword, pageable);
     }
 
     @DisplayName("게시글을 조회하면, 게시글을 반환한다.")
@@ -135,7 +129,7 @@ class ArticleServiceTest {
                 .collect(Collectors.toUnmodifiableSet()));
 
 
-        BDDMockito.then(articleRepository).should().findById(articleId);
+        then(articleRepository).should().findById(articleId);
     }
 
     
@@ -153,7 +147,7 @@ class ArticleServiceTest {
                 .hasFieldOrPropertyWithValue("hashtagDtos", article.getHashtags().stream().map(HashtagDto::from)
                         .collect(Collectors.toUnmodifiableSet()));
 
-        BDDMockito.then(articleRepository).should().findById(articleId);
+        then(articleRepository).should().findById(articleId);
     }
 
 
@@ -167,7 +161,7 @@ class ArticleServiceTest {
         Assertions.assertThat(t)
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("게시글이 없습니다 - articleId: " + articleId);
-        BDDMockito.then(articleRepository).should()
+        then(articleRepository).should()
                 .findById(articleId);
     }
 
@@ -181,7 +175,7 @@ class ArticleServiceTest {
         Assertions.assertThat(t)
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("게시글이 없습니다 - articleId: " + articleId);
-        BDDMockito.then(articleRepository).should().findById(articleId);
+        then(articleRepository).should().findById(articleId);
     }
 
     @DisplayName("게시글 정보를 입력하면, 본문에서 해시태그 정보를 추출하여 해시태그 정보가 포함된 게시글을 생성한다.")
@@ -200,10 +194,10 @@ class ArticleServiceTest {
 
         sut.saveArticle(dto);
 
-        BDDMockito.then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
-        BDDMockito.then(hashtagService).should().parseHashtagNames(dto.content());
-        BDDMockito.then(hashtagService).should().findHashtagsByNames(expectedHashtagNames);
-        BDDMockito.then(articleRepository).should().save(any(Article.class));
+        then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
+        then(hashtagService).should().parseHashtagNames(dto.content());
+        then(hashtagService).should().findHashtagsByNames(expectedHashtagNames);
+        then(articleRepository).should().save(any(Article.class));
 
 
     }
@@ -214,28 +208,27 @@ class ArticleServiceTest {
     @Test
     void givenModifiedArticleInfo_whenUpdatingArticle_thenUpdatesArticle() {
         Article article = createArticle();
-        ArticleDto dto = createArticleDto("새 타이틀", "새 내용");
+        ArticleDto dto = createArticleDto("새 타이틀", "새 내용 #springboot");
 
+        Set<String> expectedHashtagNames = Set.of("springboot");
 
-        Set<String> expectedHashtagNames = Set.of("SpringBoot");
         Set<Hashtag> expectedHashtags = new HashSet<>();
 
-
         given(articleRepository.getReferenceById(dto.id())).willReturn(article);
+
         given(userAccountRepository.getReferenceById(dto.userAccountDto().userId())).willReturn(dto.userAccountDto().toEntity());
 
 
-        willDoNothing().given(articleRepository).flush();
+        //willDoNothing().given(articleRepository).flush();
 
         willDoNothing().given(hashtagService).deleteHashtagWithoutArticles(any());
 
         given(hashtagService.parseHashtagNames(dto.content())).willReturn(expectedHashtagNames);
-
         given(hashtagService.findHashtagsByNames(expectedHashtagNames)).willReturn(expectedHashtags);
 
 
-
         sut.updateArticle(dto.id() , dto);
+
         Assertions.assertThat(article)
                 .hasFieldOrPropertyWithValue("title", dto.title())
                 .hasFieldOrPropertyWithValue("content", dto.content())
@@ -244,11 +237,12 @@ class ArticleServiceTest {
                 .extracting("hashtagName")
                 .containsExactly("springboot");
 
-        BDDMockito.then(articleRepository).should().getReferenceById(dto.id());
-        BDDMockito.then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
-        BDDMockito.then(hashtagService).should(times(2)).deleteHashtagWithoutArticles(any());
-        BDDMockito.then(hashtagService).should().findHashtagsByNames(expectedHashtagNames);
-        BDDMockito.then(hashtagService).should().parseHashtagNames(dto.content());
+        then(articleRepository).should().getReferenceById(dto.id());
+        then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
+        then(hashtagService).should(times(2)).deleteHashtagWithoutArticles(any());
+        then(hashtagService).should().parseHashtagNames(dto.content());
+
+        then(hashtagService).should().findHashtagsByNames(expectedHashtagNames);
 
 
     }
@@ -260,10 +254,10 @@ class ArticleServiceTest {
         ArticleDto dto = createArticleDto("새 타이틀", "새 내용");
         given(articleRepository.getReferenceById(dto.id())).willThrow(EntityNotFoundException.class);
         sut.updateArticle(dto.id(), dto);
-        BDDMockito.then(articleRepository).should().getReferenceById(dto.id());
+        then(articleRepository).should().getReferenceById(dto.id());
 
-        BDDMockito.then(userAccountRepository).shouldHaveNoInteractions();
-        BDDMockito.then(hashtagService).shouldHaveNoInteractions();
+        then(userAccountRepository).shouldHaveNoInteractions();
+        then(hashtagService).shouldHaveNoInteractions();
 
     }
 
@@ -274,7 +268,7 @@ class ArticleServiceTest {
         BDDMockito.given(articleRepository.count()).willReturn(expected);
         long actual = sut.getArticleCount();
         Assertions.assertThat(actual).isEqualTo(expected);
-        BDDMockito.then(articleRepository).should().count();
+        then(articleRepository).should().count();
     }
 
 
@@ -294,10 +288,10 @@ class ArticleServiceTest {
 
         sut.deleteArticle(articleId , userId);
 
-        BDDMockito.then(articleRepository).should().deleteByIdAndUserAccount_UserId(articleId, userId);
-        BDDMockito.then(articleRepository).should().flush();
+        then(articleRepository).should().deleteByIdAndUserAccount_UserId(articleId, userId);
+        then(articleRepository).should().flush();
 
-        BDDMockito.then(hashtagService).should(times(2)).deleteHashtagWithoutArticles(any());
+        then(hashtagService).should(times(2)).deleteHashtagWithoutArticles(any());
     }
 
     @DisplayName("게시글을 해시태그 검색하면, 게시글 페이지를 반환한다.")
@@ -312,7 +306,7 @@ class ArticleServiceTest {
         Page<ArticleDto> articles = sut.searchArticlesViaHashtag(hashtagName, pageable);
 
         Assertions.assertThat(articles).isEqualTo(new PageImpl<>(List.of(ArticleDto.from(expectedArticle)), pageable, 1));
-        BDDMockito.then(articleRepository).should().findByHashtagNames(List.of(hashtagName), pageable);
+        then(articleRepository).should().findByHashtagNames(List.of(hashtagName), pageable);
 
 
     }
@@ -328,8 +322,29 @@ class ArticleServiceTest {
 
         List<String> actualHashtags = sut.getHashTags();
         Assertions.assertThat(actualHashtags).isEqualTo(expectedHashtags);
-        BDDMockito.then(hashtagRepository).should().findAllHashtagNames();
+        then(hashtagRepository).should().findAllHashtagNames();
 
+    }
+
+    @DisplayName("게시글 작성자가 아닌 사람이 수정 정보를 입력하면, 아무 것도 하지 않는다.")
+    @Test
+    void givenModifiedArticleInfoWithDifferentUser_whenUpdatingArticle_thenDoesNothing() {
+        long differentArticleId = 22L;
+        Article differentArticle = createArticle(differentArticleId);
+
+        differentArticle.setUserAccount(createUserAccount("john"));
+
+        ArticleDto dto = createArticleDto("새 타이틀", "새 내용");
+
+        BDDMockito.given(articleRepository.getReferenceById(differentArticleId)).willReturn(differentArticle);
+
+        BDDMockito.given(userAccountRepository.getReferenceById(dto.userAccountDto().userId())).willReturn(dto.userAccountDto().toEntity());
+
+        sut.updateArticle(differentArticleId, dto);
+
+        then(articleRepository).should().getReferenceById(differentArticleId);
+        then(userAccountRepository).should().getReferenceById(dto.userAccountDto().userId());
+        then(hashtagService).shouldHaveNoInteractions();
     }
 
 
@@ -364,7 +379,7 @@ class ArticleServiceTest {
     }
 
     private Hashtag createHashtag(String hashtagName){
-        return createHashtag(hashtagName);
+        return createHashtag(1L , hashtagName);
     }
 
     private HashtagDto createHashtagDto(){
