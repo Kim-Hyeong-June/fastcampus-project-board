@@ -12,8 +12,6 @@ import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
 import java.util.Collection;
 import java.util.List;
 
-import static com.fastcampus.projectboard.domain.QArticle.article;
-
 public class ArticleRepositoryCustomImpl extends QuerydslRepositorySupport implements ArticleRepositoryCustom {
     public ArticleRepositoryCustomImpl() {
         super(Article.class);

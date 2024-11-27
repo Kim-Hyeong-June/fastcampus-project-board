@@ -4,7 +4,6 @@ import com.fastcampus.projectboard.dto.ArticleDto;
 import com.fastcampus.projectboard.dto.HashtagDto;
 import com.fastcampus.projectboard.dto.UserAccountDto;
 
-import java.io.Serializable;
 import java.util.Set;
 
 /**

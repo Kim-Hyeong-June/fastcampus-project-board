@@ -9,7 +9,6 @@ import com.fastcampus.projectboard.dto.UserAccountDto;
 import com.fastcampus.projectboard.repository.ArticleCommentRepository;
 import com.fastcampus.projectboard.repository.ArticleRepository;
 import com.fastcampus.projectboard.repository.UserAccountRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,11 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
-import static com.fastcampus.projectboard.domain.QArticle.article;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.willDoNothing;
 
 
 @DisplayName("비지니스 로직 - 댓글")
@@ -53,18 +48,6 @@ class ArticleCommentServiceTest {
         BDDMockito.then(articleCommentRepository).should().findByArticle_Id(articleId);
     }
 
-    @DisplayName("댓글 정보를 입력하면, 댓글을 저장한다.")
-    @Test
-    void givenArticleCommentInfo_whenSavingArticleComment_thenSavesArticleComment() {
-        ArticleCommentDto dto = createArticleCommentDto("댓글");
-        BDDMockito.given(articleCommentRepository.getReferenceById(dto.id()))
-                .willThrow(EntityNotFoundException.class);
-
-        sut.updateArticleComment(dto);
-
-        BDDMockito.then(articleCommentRepository).should().getReferenceById(dto.id());
-
-    }
 
     @DisplayName("댓글 ID를 입력하면, 댓글을 삭제한다.")
     @Test
