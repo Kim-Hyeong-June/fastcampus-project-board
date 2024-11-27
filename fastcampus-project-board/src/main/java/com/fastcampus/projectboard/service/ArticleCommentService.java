@@ -4,8 +4,6 @@ import com.fastcampus.projectboard.domain.Article;
 import com.fastcampus.projectboard.domain.ArticleComment;
 import com.fastcampus.projectboard.domain.UserAccount;
 import com.fastcampus.projectboard.dto.ArticleCommentDto;
-import com.fastcampus.projectboard.dto.UserAccountDto;
-import com.fastcampus.projectboard.dto.response.ArticleResponse;
 import com.fastcampus.projectboard.repository.ArticleCommentRepository;
 import com.fastcampus.projectboard.repository.ArticleRepository;
 import com.fastcampus.projectboard.repository.UserAccountRepository;
@@ -45,17 +43,7 @@ public class ArticleCommentService {
             log.warn("댓글 저장 실패. 댓글 작성에 필요한 정보를 찾을 수 없습니다 - {}", e.getLocalizedMessage());
         }
     }
-
-    public void updateArticleComment(ArticleCommentDto dto) {
-        try {
-            ArticleComment articlecomment = articleCommentRepository.getReferenceById(dto.id());
-            if (dto.content() != null) {
-                articlecomment.setContent(dto.content());
-            }
-        } catch (EntityNotFoundException e) {
-            log.warn("댓글 업데이트 실패. 댓글을 찾을 수 없습니다 - dto: {}", dto);
-        }
-    }
+    
 
     public void deleteArticleComment(Long articleCommentId , String userId){
         articleCommentRepository.deleteByIdAndUserAccount_UserId(articleCommentId, userId);

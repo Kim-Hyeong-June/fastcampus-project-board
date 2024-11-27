@@ -3,7 +3,6 @@ package com.fastcampus.projectboard.dto.response;
 import com.fastcampus.projectboard.domain.Article;
 import com.fastcampus.projectboard.dto.ArticleDto;
 import com.fastcampus.projectboard.dto.HashtagDto;
-import com.fastcampus.projectboard.dto.UserAccountDto;
 
 import java.time.LocalDateTime;
 import java.util.Set;
