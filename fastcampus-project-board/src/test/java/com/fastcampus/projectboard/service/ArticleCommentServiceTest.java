@@ -10,19 +10,26 @@ import com.fastcampus.projectboard.repository.ArticleCommentRepository;
 import com.fastcampus.projectboard.repository.ArticleRepository;
 import com.fastcampus.projectboard.repository.UserAccountRepository;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.groups.Tuple;
+import org.hibernate.boot.model.internal.EmbeddableBinder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.any;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.Mockito.never;
 
 
 @DisplayName("비지니스 로직 - 댓글")
@@ -37,15 +44,32 @@ class ArticleCommentServiceTest {
     @DisplayName("게시글 ID로 조회하면, 해당하는 댓글 리스트를 반환한다.")
     @Test
     void givenArticleId_whenSearchingArticleComments_thenReturnsArticleComments() {
+
         Long articleId = 1L;
-        ArticleComment expected = createArticleComment("content");
-        BDDMockito.given(articleCommentRepository.findByArticle_Id(articleId)).willReturn(List.of(expected));
+
+        ArticleComment expectedParentComment = createArticleComment(1L, "parent content");
+        ArticleComment expectedChildComment = createArticleComment(2L, "child content");
+
+        expectedChildComment.setParentCommentId(expectedParentComment.getId());
+
+        BDDMockito.given(articleCommentRepository.findByArticle_Id(articleId))
+                .willReturn(List.of(
+                        expectedParentComment,
+                        expectedChildComment
+                ));
 
         List<ArticleCommentDto> actual = sut.searchArticleComments(articleId);
-        Assertions.assertThat(actual).hasSize(1)
-                .first().hasFieldOrPropertyWithValue("content", expected.getContent());
 
-        BDDMockito.then(articleCommentRepository).should().findByArticle_Id(articleId);
+        Assertions.assertThat(actual).hasSize(2);
+        Assertions.assertThat(actual)
+                .extracting("id", "articleId", "parentCommentId", "content")
+                .containsExactlyInAnyOrder(
+                        Tuple.tuple(1L, 1L, null, "parent content"),
+                        Tuple.tuple(2L, 1L, 1L, "child content")
+                );
+
+        then(articleCommentRepository).should().findByArticle_Id(articleId);
+
     }
 
 
@@ -60,13 +84,60 @@ class ArticleCommentServiceTest {
 
         sut.deleteArticleComment(articleCommentId, userId);
 
-        BDDMockito.then(articleCommentRepository).should()
+        then(articleCommentRepository).should()
                 .deleteByIdAndUserAccount_UserId(articleCommentId,userId);
     }
 
-    private ArticleCommentDto createArticleCommentDto(String content) {
-        return ArticleCommentDto.of(1L, 1L, createUserAccountDto(), content, LocalDateTime.now(), "uno", LocalDateTime.now(), "uno");
+    @DisplayName("부모 댓글 ID와 댓글 정보를 입력하면, 대댓글을 저장한다.")
+    @Test
+    void givenParentCommentIdAndArticleCommentInfo_whenSaving_thenSavesChildComment() {
+        Long parentCommentId = 1L;
+        ArticleComment parent = createArticleComment(parentCommentId, "댓글");
+        ArticleCommentDto child = createArticleCommentDto(parentCommentId, "대댓글");
+
+        BDDMockito.given(articleRepository.getReferenceById(child.articleId())).willReturn(createArticle());
+
+        BDDMockito.given(userAccountRepository.getReferenceById(child.userAccountDto().userId()))
+                .willReturn(createUserAccount());
+
+        BDDMockito.given(articleCommentRepository.getReferenceById(child.parentCommentId()))
+                .willReturn(parent);
+
+
+        sut.saveArticleComment(child);
+
+        Assertions.assertThat(child.parentCommentId()).isNotNull();
+        then(articleRepository).should().getReferenceById(child.articleId());
+
+        then(userAccountRepository).should().getReferenceById(child.userAccountDto().userId());
+        then(articleCommentRepository).should().getReferenceById(child.parentCommentId());
     }
+
+
+
+    private ArticleCommentDto createArticleCommentDto(String content){
+        return createArticleCommentDto(null, content);
+    }
+
+    private ArticleCommentDto createArticleCommentDto(Long parentCommentId , String content){
+        return createArticleCommentDto(1L, parentCommentId, content);
+    }
+
+
+    private ArticleCommentDto createArticleCommentDto(Long id , Long parentCommentId , String content){
+        return ArticleCommentDto.of(
+                id,
+                1L,
+                createUserAccountDto(),
+                parentCommentId,
+                content,
+                LocalDateTime.now(),
+                "uno",
+                LocalDateTime.now(),
+                "uno"
+        );
+    }
+
 
     private UserAccountDto createUserAccountDto() {
         return UserAccountDto.of("uno",
@@ -80,8 +151,10 @@ class ArticleCommentServiceTest {
                 "uno");
     }
 
-    private ArticleComment createArticleComment(String content) {
-        return ArticleComment.of(createArticle(), createUserAccount() , content);
+    private ArticleComment createArticleComment(Long id , String content) {
+        ArticleComment articleComment = ArticleComment.of(createArticle(), createUserAccount(), content);
+        ReflectionTestUtils.setField(articleComment, "id", id);
+        return articleComment;
     }
 
     private UserAccount createUserAccount() {
@@ -90,6 +163,7 @@ class ArticleCommentServiceTest {
 
     private Article createArticle(){
         Article article = Article.of(createUserAccount(), "title", "content");
+        ReflectionTestUtils.setField(article, "id", 1L);
         article.addHashtags(Set.of(createHashtag(article)));
         return article;
 
