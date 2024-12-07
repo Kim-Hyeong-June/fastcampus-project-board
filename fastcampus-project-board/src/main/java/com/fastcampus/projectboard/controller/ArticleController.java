@@ -51,6 +51,8 @@ public class ArticleController {
     public String article(@PathVariable Long articleId, ModelMap map) {
         ArticleWithCommentsResponse article = ArticleWithCommentsResponse.from(articleService.getArticleWithComments(articleId));
 
+        //System.out.println(article); // 디버깅 용도로 사용..
+
         map.addAttribute("article", article); // TODO : 구현 할때 실제 테이터를 넣어야한다.
         map.addAttribute("articleComments", article.articleCommentResponses());
         map.addAttribute("totalCount", articleService.getArticleCount());
